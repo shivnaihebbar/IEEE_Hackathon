@@ -41,7 +41,7 @@ export default function AttackDistChart({ summary }: AttackDistChartProps) {
               color: "#f9fafb",
               fontSize: "12px",
             }}
-            formatter={(value: number) => [value.toLocaleString(), "Flows"]}
+            formatter={(value) => [Number(value).toLocaleString(), "Flows"]}
           />
           <Bar dataKey="count" radius={[4, 4, 0, 0]}>
             {data.map((entry) => (
