@@ -28,17 +28,23 @@ model = None
 label_encoder = None
 feature_list = None
 explainer = None
+scaler = None
 
 if not DUMMY_MODE:
     import json
     model = joblib.load("model.joblib")
     label_encoder = joblib.load("label_encoder.joblib")
+    # Load scaler if Person 1 used one
+    scaler = joblib.load("scaler.joblib") if os.path.exists("scaler.joblib") else None
     with open("feature_list.json") as f:
-        feature_list = json.load(f)
+        raw = json.load(f)
+        # Strip quotes from feature names e.g. "'Flow Duration'" → "Flow Duration"
+        feature_list = [f.replace("'", '').replace('"', '').strip() for f in raw]
     # SHAP TreeExplainer — fast for XGBoost
-    background = np.load("shap_background.npy") if os.path.exists("shap_background.npy") else None
-    explainer = shap.TreeExplainer(model, background)
+    explainer = shap.TreeExplainer(model, feature_perturbation="tree_path_dependent")
     print("✅ Model loaded successfully")
+    print(f"   Scaler: {'loaded' if scaler else 'not found'}")
+    print(f"   Features: {len(feature_list)}")
 else:
     print("⚠️  Running in DUMMY MODE — drop model.joblib to activate real inference")
 
@@ -146,10 +152,17 @@ def dummy_predict(n=1):
 
 def real_predict(df: pd.DataFrame):
     """Run actual model inference"""
+    # Strip quotes from incoming column names to match cleaned feature_list
+    df.columns = [c.replace("'", '').replace('"', '').strip() for c in df.columns]
     # Align columns to training feature order
-    df = df[feature_list]
+    df = df.reindex(columns=feature_list, fill_value=0)
     df = df.fillna(0).replace([np.inf, -np.inf], 0)
-    proba = model.predict_proba(df)
+    # Apply scaler using numpy array to bypass feature name check
+    if scaler is not None:
+        X = scaler.transform(df.values)
+    else:
+        X = df.values
+    proba = model.predict_proba(X)
     preds = np.argmax(proba, axis=1)
     results = []
     for i, pred in enumerate(preds):
@@ -167,20 +180,24 @@ def real_predict(df: pd.DataFrame):
 
 def get_shap_explanation(df: pd.DataFrame, pred_class: str):
     """Return top 5 SHAP features for a single prediction"""
-    df = df[feature_list].fillna(0).replace([np.inf, -np.inf], 0)
-    shap_values = explainer.shap_values(df)
+    df.columns = [c.replace("'", '').replace('"', '').strip() for c in df.columns]
+    df = df.reindex(columns=feature_list, fill_value=0)
+    df = df.fillna(0).replace([np.inf, -np.inf], 0)
+    if scaler is not None:
+        X = scaler.transform(df.values)
+    else:
+        X = df.values
+    shap_values = explainer.shap_values(X)
     # For multiclass, shap_values is a list — pick the predicted class index
     class_idx = list(label_encoder.classes_).index(pred_class)
     if isinstance(shap_values, list):
         sv = shap_values[class_idx][0]
     else:
         sv = shap_values[0]
-    # Build sorted feature list
-    features = feature_list
-    shap_pairs = sorted(zip(features, sv), key=lambda x: abs(x[1]), reverse=True)[:5]
+    shap_pairs = sorted(zip(feature_list, sv.tolist()), key=lambda x: abs(x[1]), reverse=True)[:5]
     return [
         {
-            "feature": f,
+            "feature": f.strip("'"),
             "shap_value": round(float(v), 6),
             "direction": "increases_risk" if v > 0 else "decreases_risk"
         }
@@ -191,7 +208,7 @@ def csv_to_df(content: bytes) -> pd.DataFrame:
     """Parse uploaded CSV bytes into DataFrame"""
     df = pd.read_csv(io.StringIO(content.decode("utf-8")))
     # Strip quotes from column names if present (MSCAD has them)
-    df.columns = [c.strip().strip("'") for c in df.columns]
+    df.columns = [c.replace("'", '').replace('"', '').strip() for c in df.columns]
     # Drop label column if present
     df = df.drop(columns=["Label"], errors="ignore")
     return df
@@ -257,10 +274,14 @@ def explain_single(flow: FlowRecord):
     df = pd.DataFrame([flow.dict()])
     df.columns = [c.replace("_", " ") for c in df.columns]
     result = real_predict(df)
-    shap_feats = get_shap_explanation(df, result[0]["attack_class"])
+    try:
+     shap_feats = get_shap_explanation(df, result[0]["attack_class"])
+    except Exception as e:
+     print(f"SHAP failed: {e}")
+    shap_feats = []
     return {"attack_class": result[0]["attack_class"],
-            "confidence": result[0]["confidence"],
-            "shap_features": shap_feats}
+        "confidence": result[0]["confidence"],
+        "shap_features": shap_feats}
 
 @app.get("/stats")
 def get_stats():
