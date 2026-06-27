@@ -3,17 +3,29 @@
 import { useEffect, useState } from "react";
 import { ExplainResponse, ATTACK_COLORS, AttackLabel } from "../lib/api";
 
-// Sample flow record to explain (using typical Brute Force values from MSCAD)
 const SAMPLE_FLOW = {
   Flow_Duration: 1518, Tot_Fwd_Pkts: 2, Tot_Bwd_Pkts: 5,
   SYN_Flag_Cnt: 1, ACK_Flag_Cnt: 0, Flow_Pkts_s: 4611.33,
   Flow_Byts_s: 320816.86, Pkt_Len_Max: 377, Pkt_Len_Min: 0,
 };
 
+// Fallback SHAP data if backend explain endpoint fails
+const FALLBACK_SHAP: ExplainResponse = {
+  attack_class: "Brute_Force" as AttackLabel,
+  confidence: 0.945,
+  shap_features: [
+    { feature: "SYN Flag Cnt",   shap_value: 0.42, direction: "increases_risk" },
+    { feature: "Flow Pkts/s",    shap_value: 0.31, direction: "increases_risk" },
+    { feature: "Flow Duration",  shap_value: -0.18, direction: "decreases_risk" },
+    { feature: "Bwd Pkt Len Max",shap_value: 0.14, direction: "increases_risk" },
+    { feature: "ACK Flag Cnt",   shap_value: -0.09, direction: "decreases_risk" },
+  ],
+};
+
 export default function ShapPanel() {
   const [data, setData] = useState<ExplainResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     fetch("/api/explain", {
@@ -22,8 +34,21 @@ export default function ShapPanel() {
       body: JSON.stringify(SAMPLE_FLOW),
     })
       .then((r) => r.json())
-      .then((d) => { setData(d); setLoading(false); })
-      .catch(() => { setError(true); setLoading(false); });
+      .then((d) => {
+        // Check if response has valid shap_features
+        if (d && Array.isArray(d.shap_features) && d.shap_features.length > 0) {
+          setData(d);
+        } else {
+          setData(FALLBACK_SHAP);
+          setUsingFallback(true);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setData(FALLBACK_SHAP);
+        setUsingFallback(true);
+        setLoading(false);
+      });
   }, []);
 
   const maxAbs = data
@@ -50,6 +75,9 @@ export default function ShapPanel() {
           <span className="text-xs text-gray-500">
             {(data.confidence * 100).toFixed(1)}% confidence
           </span>
+          {usingFallback && (
+            <span className="text-xs text-yellow-600">· sample values</span>
+          )}
         </div>
       )}
 
@@ -58,12 +86,6 @@ export default function ShapPanel() {
           <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           Loading SHAP values...
         </div>
-      )}
-
-      {error && (
-        <p className="text-red-400 text-sm py-4">
-          Could not load SHAP explanation. Check backend connection.
-        </p>
       )}
 
       {data && (
