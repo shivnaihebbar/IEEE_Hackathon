@@ -132,7 +132,7 @@ export default function UploadPage() {
           </p>
           <div className="flex gap-3 flex-wrap">
             <a
-              href="https://github.com"
+              href="https://github.com/shivnaihebbar/IEEE_Hackathon"
               style={{ borderColor: "var(--ink)" }}
               className="border-[1.5px] rounded-full px-6 py-3.5 text-sm font-semibold"
             >
