@@ -46,7 +46,7 @@ export default function StatsCards({ totalRows, attackCount, normalCount, topAtt
       {cards.map((card) => (
         <div
           key={card.label}
-          className={`bg-gray-900 border ${card.color} rounded-xl p-4 flex flex-col gap-2`}
+          className={`bg-black border ${card.color} rounded-xl p-4 flex flex-col gap-2`}
         >
           <div className="flex items-center gap-2">
             <span className="text-xl">{card.icon}</span>

@@ -22,10 +22,17 @@ export default function DashboardPage() {
     setResult(JSON.parse(stored));
   }, [router]);
 
+  // Unified loading state matching the upload section
   if (!result) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div style={{ background: "var(--paper)", color: "var(--ink)" }} className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <div
+          style={{ borderColor: "var(--signal-slate)", borderTopColor: "transparent" }}
+          className="w-8 h-8 border-2 rounded-full animate-spin"
+        />
+        <p style={{ fontFamily: "var(--font-mono)" }} className="text-sm font-medium">
+          LOADING_WORKSPACE...
+        </p>
       </div>
     );
   }
@@ -40,23 +47,29 @@ export default function DashboardPage() {
     .sort(([, a], [, b]) => b - a)[0]?.[0] ?? "None";
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      {/* Nav */}
-      <nav className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🛡️</span>
-          <span className="font-bold text-white">CyberGuard</span>
-          <span className="text-xs text-gray-600 ml-2">Dashboard</span>
+    <main style={{ background: "var(--paper)", color: "var(--ink)" }} className="min-h-screen font-sans">
+      
+      {/* Brutalist Nav */}
+      <nav style={{ borderColor: "var(--line)" }} className="border-b-[1.5px] px-6 md:px-14 py-6 flex items-center justify-between">
+        <div className="flex items-baseline gap-4">
+          <span className="text-2xl font-extrabold tracking-tighter">
+            Cyber<span style={{ color: "var(--signal-red)" }}>Guard</span>
+          </span>
+          <span style={{ fontFamily: "var(--font-mono)", color: "var(--ink-soft)" }} className="text-[10px] uppercase tracking-wider hidden sm:block">
+            / Dashboard
+          </span>
         </div>
         <button
           onClick={() => router.push("/")}
-          className="text-xs text-gray-500 hover:text-white transition-colors border border-gray-800 px-3 py-1.5 rounded-lg"
+          style={{ borderColor: "var(--line)", fontFamily: "var(--font-mono)" }}
+          className="border-[1.5px] rounded-full px-4 py-2 text-[11px] font-medium hover:bg-[var(--paper-raised)] transition-colors"
         >
-          ← Upload New File
+          ← NEW_UPLOAD
         </button>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      {/* Main Content Area */}
+      <div className="max-w-[1400px] mx-auto px-6 md:px-14 py-10 space-y-8">
 
         {/* Stats */}
         <StatsCards
@@ -67,21 +80,22 @@ export default function DashboardPage() {
         />
 
         {/* Charts row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <AttackDistChart summary={summary} />
           <ShapPanel />
         </div>
 
         {/* Bottom row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <PredictionsTable predictions={result.predictions} />
           <LiveAlertFeed />
         </div>
 
       </div>
 
-      <footer className="text-center text-xs text-gray-800 py-6">
-        IEEE DataPort Hackathon 2026 · IEEE CS Bangalore Chapter · XGBoost + SHAP
+      {/* Footer matching the front page */}
+      <footer style={{ fontFamily: "var(--font-mono)", color: "var(--line-strong)" }} className="text-center text-[10px] tracking-wide py-12">
+        IEEE DATAPORT HACKATHON 2026 · IEEE CS BANGALORE CHAPTER · XGBOOST + SHAP
       </footer>
     </main>
   );

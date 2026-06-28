@@ -58,7 +58,7 @@ export default function LiveAlertFeed() {
   const attackCount = alerts.filter((a) => a.is_attack).length;
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col h-full">
+    <div className="bg-black border border-gray-800 rounded-xl p-5 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
           Live Detection Feed

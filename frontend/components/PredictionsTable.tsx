@@ -8,7 +8,7 @@ interface PredictionsTableProps {
 
 export default function PredictionsTable({ predictions }: PredictionsTableProps) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div className="bg-black border border-gray-800 rounded-xl p-5">
       <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
         Sample Predictions (first 20 flows)
       </h2>

@@ -56,7 +56,7 @@ export default function ShapPanel() {
     : 1;
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div className="bg-black border border-gray-800 rounded-xl p-5">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
           SHAP Explainability
