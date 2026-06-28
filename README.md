@@ -64,19 +64,17 @@ cyberguard/
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+source venv/bin/activate       
 pip install -r requirements.txt
-uvicorn main:app --reload       # Starts on http://localhost:8000
+uvicorn main:app --reload      
 ```
-API runs in DUMMY MODE until model.joblib exists.
-Test: http://localhost:8000/health
 
 ### Frontend 
 ```bash
 cd frontend
 npm install
 cp .env.local.example .env.local
-npm run dev                     # Starts on http://localhost:3000
+npm run dev                 
 ```
 
 ### Model Training 
